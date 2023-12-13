@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile # Ensure you have a Dockerfile in your frontend directory
+      args:
+        - VUE_APP_BACKEND_URL=${VUE_APP_BACKEND_URL}
+    ports:
+      - "8080:8080" # Replace with your frontend's port if different
+    depends_on:
+      - backend
+    volumes:
+      #- ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VUE_APP_BACKEND_URL=http://backend:3000
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile # Ensure you have a Dockerfile in your backend directory
+      args:
+        - INIT_DB=${INIT_DB}
+        - MONGODB_DSN=${MONGODB_DSN}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - INIT_DB=true
+      - DB_URL=mongodb://db:27017/crm
+    links:
+      - db
+
+  db:
+    image: mongo
+    ports:
+      - "27018:27017" # This port should only be exposed in a development environment
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=crm
+
+volumes:
+  mongodb_data:
